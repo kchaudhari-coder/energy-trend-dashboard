@@ -17,17 +17,15 @@
   *##set($emptystr = "-")#*
 
 
-  *##set($lt1 = "TR-1")#*
-  *##set($lt2 = "TR-2")#*
-  *##set($lt3 = "TR-3")#*
-  *##set($lt4 = "TR-4")#*
-  *##set($ht = "Main Panel")#*
-  *##set($dg = "DG")#*
+  *##set($lt1 = "MAIN_LT_INCOMER")#*
+  *##set($ht = "MAIN_HT_INCOMER")#*
+  *##set($dg = "DG_1500KVA")#*
   *##set($solar1 = "SOLAR")#*
   *##set($vatStr = "VAT")#*
-  *##set($offPeakUnitChargeStr = "OFF_PEAK_UNIT_CHARGE")#*
-  *##set($peakUnitChargeStr = "PEAK_UNIT_CHARGE")#*
-  *##set($normalUnitChargeStr = "NORMAL_UNIT_CHARGE")#*
+  *##set($reaStr = "REA")#*
+  *##set($kvaStr = "KVA_PER_UNIT_CHARGE")#*
+  *##set($kwhStr = "KWH_FIXED_CHARGE")#*
+  *##set($ewuraStr = "EWURA")#*
 
   *##set($serviceCharges = 0)#*
   *##set($reaRate = 0)#*
@@ -35,8 +33,11 @@
   *##set($kvaRate = 0)#*
   *##set($kwhRate = 0)#*
   *##set($ewuraRate = 0)#*
-  *##set($offPeakRate = 0)#*
-  *##set($peakRate = 0)#*
+
+  *##set($totalDiesel = 0)#*
+  *##set($dgConsumption = 0)#*
+  *##set($dgRunHour = 0)#*
+
 
   *##set($totalDiesel = 0)#*
   *##set($dgConsumption = 0)#*
@@ -53,7 +54,7 @@
     *##set($tranformerloss = 0)#*
     *##set($kvaDemand = 950)#*
     *##foreach($daily in $electricitydaily)#*
-      *##if($daily.get("_id").metername == $lt1 || $daily.get("_id").metername == $lt2 || $daily.get("_id").metername == $lt3 || $daily.get("_id").metername == $lt4)#*
+      *##if($daily.get("_id").metername == $lt1)#*
       *##set($ltkwh = $math.add($ltkwh, $daily.get("kwh")))#*
       *##end#*
       *##if($daily.get("_id").metername == $dg)#*
@@ -64,17 +65,23 @@
       *##end#*
     *##end#*
     *##foreach($bill in $billing)#*
+        *##if($bill.get("_id").cost_category == $serviceChargeStr)#*
+            *##set($serviceCharges = $bill.get("_id").rate)#*
+        *##end#*
+        *##if($bill.get("_id").cost_category == $reaStr)#*
+            *##set($reaRate = $bill.get("_id").rate)#*
+        *##end#*
         *##if($bill.get("_id").cost_category == $vatStr)#*
             *##set($vatRate = $bill.get("_id").rate)#*
         *##end#*
-        *##if($bill.get("_id").cost_category == $offPeakUnitChargeStr)#*
-            *##set($offPeakRate = $bill.get("_id").rate)#*
+        *##if($bill.get("_id").cost_category == $kvaStr)#*
+            *##set($kvaRate = $bill.get("_id").rate)#*
         *##end#*
-        *##if($bill.get("_id").cost_category == $peakUnitChargeStr)#*
-            *##set($peakRate = $bill.get("_id").rate)#*
-        *##end#*
-        *##if($bill.get("_id").cost_category == $normalUnitChargeStr)#*
+        *##if($bill.get("_id").cost_category == $kwhStr)#*
             *##set($kwhRate = $bill.get("_id").rate)#*
+        *##end#*
+        *##if($bill.get("_id").cost_category == $ewuraStr)#*
+            *##set($ewuraRate = $bill.get("_id").rate)#*
         *##end#*
     *##end#*
     *##foreach($dg in $dgbilling)#*
@@ -111,7 +118,7 @@
     *##set($solarkwh = 0)#*
     *##set($tranformerloss = 0)#*
     *##foreach($mtd in $electricitymonth)#*
-      *##if($mtd.get("_id").metername == $lt1 || $mtd.get("_id").metername == $lt2 || $mtd.get("_id").metername == $lt3 || $mtd.get("_id").metername == $lt4)#*
+      *##if($mtd.get("_id").metername == $lt1)#*
         *##set($ltkwh = $math.add($ltkwh, $mtd.get("kwh")))#*
       *##end#*
       *##if($mtd.get("_id").metername == $dg)#*
@@ -223,7 +230,7 @@
         *##set($monthObj.billSource = "none")#*
         *##set($tmp = $monthMap.put($key, $monthObj))#*
       *##end#*
-      *##if($meter == $lt1 || $meter == $lt2 || $meter == $lt3 || $meter == $lt4)#*
+      *##if($meter == $lt1)#*
         *##set($monthMap.get($key).lt = $math.add($monthMap.get($key).lt, $kwh))#*
       *##end#*
       *##if($meter == $dg)#*
