@@ -1,0 +1,116 @@
+<mon:Mongobot xmlns:mon="http://mongobot.entrib.com" Name="cumulativeemsreport" Description="Cumulative EMS Report" Database="emgda" Host="localhost" Port="27017">
+  <DataObject Name="electricitydaily" Collection="aggregateshift">
+		<Aggregate>
+			<Pipeline>
+				<Match Condition="siteId == siteid &amp;&amp; elementName == &quot;utility&quot; &amp;&amp; ( date &gt;= startdate &amp;&amp; date &lt;= enddate )" />
+			</Pipeline>
+			<Pipeline>
+				<Group>
+          			<Key Name="metername" Field="metername" />
+                    <Key Name="meternumber" Field="meternumber" />
+					<GroupField Name="kwh" Field="differenceinkwh" GroupFunction="Sum" />
+				</Group>
+			</Pipeline>
+		</Aggregate>
+	</DataObject>
+	<DataObject Name="electricitymonth" Collection="aggregateshift">
+		<Aggregate>
+			<Pipeline>
+				<Match Condition="siteId == siteid &amp;&amp; elementName == &quot;utility&quot; &amp;&amp; (date &gt;= startmonthdate  &amp;&amp; date &lt;= endmonthdate )" />
+			</Pipeline>
+			<Pipeline>
+				<Group>
+          			<Key Name="metername" Field="metername" />
+                    <Key Name="meternumber" Field="meternumber" />
+					<GroupField Name="kwh" Field="kwh" GroupFunction="Sum" />
+				</Group>
+			</Pipeline>
+		</Aggregate>
+	</DataObject>
+	<DataObject Name="electricityyear" Collection="aggregateshift">
+		<Aggregate>
+			<Pipeline>
+				<Match Condition="siteId == siteid &amp;&amp; elementName == &quot;utility&quot; &amp;&amp; (date &gt;= startyeardate &amp;&amp; date &lt;= endyeardate )" />
+			</Pipeline>
+			<Pipeline>
+				<Group>
+          			<Key Name="metername" Field="metername" />
+                    <Key Name="meternumber" Field="meternumber" />
+					<Key Name="year" Field="year" />
+					<Key Name="month" Field="month" />
+					<GroupField Name="kwh" Field="kwh" GroupFunction="Sum" />
+				</Group>
+			</Pipeline>
+		</Aggregate>
+	</DataObject>
+	<DataObject Name="billing" Collection="billing">
+		<Aggregate>
+			<Pipeline>
+				<Match Condition="siteId == siteid &amp;&amp; elementName == &quot;billing_rates&quot; &amp;&amp; effective_to &gt;= startdate &amp;&amp; effective_from &lt; enddate" />
+			</Pipeline>
+			<Pipeline>
+				<Group>
+          			<Key Name="cost_category" Field="cost_category" />
+                    <Key Name="rate" Field="rate" />
+				</Group>
+			</Pipeline>
+		</Aggregate>
+	</DataObject>
+	<DataObject Name="dgbilling" Collection="billing">
+		<Aggregate>
+			<Pipeline>
+				 <Match Condition="siteId == siteid &amp;&amp; (elementName == &quot;dg_billing_records&quot; || elementName == &quot;billing_records&quot;) &amp;&amp; billing_period_start &gt;= startbilldate &amp;&amp; billing_period_end &lt;= endbilldate" />
+			</Pipeline>
+			<Pipeline>
+				<Group>
+					<Key Name="elementName" Field="elementName" />
+					<GroupField Name="kwh" Field="dg_total_consumption" GroupFunction="Sum" />
+					<GroupField Name="diesel" Field="diesel_consumption" GroupFunction="Sum" />
+					<GroupField Name="runhour" Field="running_hours" GroupFunction="Sum" />
+					<GroupField Name="actual_bill_amount" Field="actual_bill_amount" GroupFunction="Sum" />
+					<GroupField Name="actual_kwh_from_bill" Field="actual_kwh_from_bill" GroupFunction="Sum" />
+				</Group>
+			</Pipeline>
+		</Aggregate>
+	</DataObject>
+	<DataObject Name="billingyear" Collection="billing">
+		<Aggregate>
+			<Pipeline>
+				<Match Condition="siteId == siteid &amp;&amp; (elementName == &quot;dg_billing_records&quot; || elementName == &quot;billing_records&quot;) &amp;&amp; billing_period_start &gt;= startyeardate &amp;&amp; billing_period_end &lt;= endyeardate" />
+			</Pipeline>
+			<Pipeline>
+				<Group>
+				 	<Key Name="start" Field="billing_period_start" />
+					<Key Name="end" Field="billing_period_end" />
+					<Key Name="recordyear" Field="year" />
+					<Key Name="recordmonth" Field="month" />
+					<Key Name="createdAt" Field="created_at" />
+					<Key Name="elementName" Field="elementName" />
+					<GroupField Name="dieselkwh" Field="dg_total_consumption" GroupFunction="Sum" />
+					<GroupField Name="diesel" Field="diesel_consumption" GroupFunction="Sum" />
+					<GroupField Name="runhour" Field="running_hours" GroupFunction="Sum" />
+					<GroupField Name="actual_bill_amount" Field="actual_bill_amount" GroupFunction="Sum" />
+					<GroupField Name="total_consumption" Field="total_consumption" GroupFunction="Sum" />
+					<GroupField Name="actual_kwh_from_bill" Field="actual_kwh_from_bill" GroupFunction="Sum" />
+				</Group>
+			</Pipeline>
+		</Aggregate>
+	</DataObject>
+	<DataObject Name="manualreadings" Collection="billing">
+		<Aggregate>
+			<Pipeline>
+				<Match Condition="siteId == siteid &amp;&amp; elementName == &quot;manualreadings&quot;" />
+			</Pipeline>
+			<Pipeline>
+				<Group>
+					<Key Name="shiftmonth" Field="shiftmonth" />
+					<Key Name="shiftyear" Field="shiftyear" />
+					<Key Name="ht_kwh" Field="ht_kwh" />
+					<Key Name="lt_kwh" Field="lt_kwh" />
+					<Key Name="transformer_loss" Field="transformer_loss" />
+					<Key Name="dg_kwh" Field="dg_kwh" />
+				</Group>
+			</Pipeline>
+		</Aggregate>
+	</DataObject>
+</mon:Mongobot>

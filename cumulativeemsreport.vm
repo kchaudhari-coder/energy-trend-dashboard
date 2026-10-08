@@ -1,0 +1,441 @@
+{#*
+  *#"cols":[#*
+    *#{"name":"reporttype","type":"number","description":"Type"},#*
+    *#{"name":"dg","type":"number","description":"DG Kwh"},#*
+    *#{"name":"lt","type":"number","description":"lt Kwh"},#*
+    *#{"name":"ht","type":"number","description":"HT Kwh"},#*
+    *#{"name":"tranformerloss","type":"number","description":"Tranformer Loss"},#*
+    *#{"name":"solar","type":"number","description":"Solar Kwh"}#*
+  *#],#*
+  *##set($electricitydaily = $resultmap.electricitydaily)#*
+  *##set($electricitymonth = $resultmap.electricitymonth)#*
+  *##set($electricityyear = $resultmap.electricityyear)#*
+  *##set($billing = $resultmap.billing)#*
+  *##set($dgbilling = $resultmap.dgbilling)#*
+  *##set($manualreadings = $resultmap.manualreadings)#*
+  *##set($ytdbilling = $resultmap.billingyear)#*
+  *##set($emptystr = "-")#*
+
+
+  *##set($lt1 = "TR-1")#*
+  *##set($lt2 = "TR-2")#*
+  *##set($lt3 = "TR-3")#*
+  *##set($lt4 = "TR-4")#*
+  *##set($ht = "Main Panel")#*
+  *##set($dg = "DG")#*
+  *##set($solar1 = "SOLAR")#*
+  *##set($vatStr = "VAT")#*
+  *##set($offPeakUnitChargeStr = "OFF_PEAK_UNIT_CHARGE")#*
+  *##set($peakUnitChargeStr = "PEAK_UNIT_CHARGE")#*
+  *##set($normalUnitChargeStr = "NORMAL_UNIT_CHARGE")#*
+
+  *##set($serviceCharges = 0)#*
+  *##set($reaRate = 0)#*
+  *##set($vatRate = 0)#*
+  *##set($kvaRate = 0)#*
+  *##set($kwhRate = 0)#*
+  *##set($ewuraRate = 0)#*
+  *##set($offPeakRate = 0)#*
+  *##set($peakRate = 0)#*
+
+  *##set($totalDiesel = 0)#*
+  *##set($dgConsumption = 0)#*
+  *##set($dgRunHour = 0)#*
+  *##set($mtdBillAmount = 0)#*
+  *##set($mtdActualBillKwh = 0)#*
+
+  *##set($count = 0)#*
+  *#"reportData" : {#*
+    *##set($dgkwh = 0)#*
+    *##set($ltkwh = 0)#*
+    *##set($htkwh = 0)#*
+    *##set($solarkwh = 0)#*
+    *##set($tranformerloss = 0)#*
+    *##set($kvaDemand = 950)#*
+    *##foreach($daily in $electricitydaily)#*
+      *##if($daily.get("_id").metername == $lt1 || $daily.get("_id").metername == $lt2 || $daily.get("_id").metername == $lt3 || $daily.get("_id").metername == $lt4)#*
+      *##set($ltkwh = $math.add($ltkwh, $daily.get("kwh")))#*
+      *##end#*
+      *##if($daily.get("_id").metername == $dg)#*
+        *##set($dgkwh = $math.roundTo(2, $daily.get("kwh")))#*
+      *##end#*
+      *##if($daily.get("_id").metername == $solar1)#*
+        *##set($solarkwh = $math.add($solarkwh, $daily.get("kwh")))#*
+      *##end#*
+    *##end#*
+    *##foreach($bill in $billing)#*
+        *##if($bill.get("_id").cost_category == $vatStr)#*
+            *##set($vatRate = $bill.get("_id").rate)#*
+        *##end#*
+        *##if($bill.get("_id").cost_category == $offPeakUnitChargeStr)#*
+            *##set($offPeakRate = $bill.get("_id").rate)#*
+        *##end#*
+        *##if($bill.get("_id").cost_category == $peakUnitChargeStr)#*
+            *##set($peakRate = $bill.get("_id").rate)#*
+        *##end#*
+        *##if($bill.get("_id").cost_category == $normalUnitChargeStr)#*
+            *##set($kwhRate = $bill.get("_id").rate)#*
+        *##end#*
+    *##end#*
+    *##foreach($dg in $dgbilling)#*
+        *##set($billElementName = $dg.get("_id").elementName)#*
+        *##set($totalDiesel = $math.add($totalDiesel, $dg.get("diesel")))#*
+        *##set($dgConsumption = $math.add($dgConsumption, $dg.get("kwh")))#*
+        *##set($dgRunHour = $math.add($dgRunHour, $dg.get("runhour")))#*
+        *##if($billElementName == "billing_records")#*
+        *##set($mtdBillAmount = $math.add($mtdBillAmount, $dg.get("actual_bill_amount")))#*
+        *##set($mtdActualBillKwh = $math.add($mtdActualBillKwh, $dg.get("actual_kwh_from_bill")))#*
+        *##end#*
+    *##end#*
+    *##if($totalDiesel == 0)#*
+        *##set($dgEfficiency = 0)#*
+    *##else#*
+        *##set($dgEfficiency = $math.div($dgConsumption, $totalDiesel))#*
+    *##end#*
+      *##set($htkwh = 0)#*
+      *##set($tranformerloss = 0)#*
+        *#"daily" : {#* 
+            *#"reporttype" : "daily",#*
+            *#"dg" : $dgkwh,#*
+            *#"lt" : $ltkwh,#*
+            *#"ht" : $htkwh,#*
+            *#"tranformerloss" : $tranformerloss,#*
+            *#"solar" : $solarkwh#*
+        *#},#*
+      *##set($count = $count + 1)#*
+
+    ##-----------------Monthly---------------------##
+    *##set($dgkwh = 0)#*
+    *##set($ltkwh = 0)#*
+    *##set($htkwh = 0)#*
+    *##set($solarkwh = 0)#*
+    *##set($tranformerloss = 0)#*
+    *##foreach($mtd in $electricitymonth)#*
+      *##if($mtd.get("_id").metername == $lt1 || $mtd.get("_id").metername == $lt2 || $mtd.get("_id").metername == $lt3 || $mtd.get("_id").metername == $lt4)#*
+        *##set($ltkwh = $math.add($ltkwh, $mtd.get("kwh")))#*
+      *##end#*
+      *##if($mtd.get("_id").metername == $dg)#*
+        *##set($dgkwh = $math.roundTo(2, $mtd.get("kwh")))#*
+      *##end#*
+      *##if($mtd.get("_id").metername == $solar1)#*
+        *##set($solarkwh = $math.add($solarkwh, $mtd.get("kwh")))#*
+      *##end#*
+    *##end#*
+
+    *##set($htkwh = 0)#*
+    *##set($tranformerloss = 0)#*
+    *##if($dgkwh == 0 && $dgConsumption > 0)#*
+    *##set($dgkwh = $math.roundTo(2, $dgConsumption))#*
+    *##end#*
+    *##set($mtdBillSource = "none")#*
+    *##set($mtdBillUnits = $ltkwh)#*
+    *##if($mtdActualBillKwh > 0)#*
+      *##set($mtdBillUnits = $mtdActualBillKwh)#*
+    *##end#*
+    *##if($mtdBillAmount > 0)#*
+      *##set($mtdBillSource = "manual")#*
+    *##elseif($mtdBillUnits > 0)#*
+      *##set($baseAmount = $math.mul($mtdBillUnits, $kwhRate))#*
+      *##set($vatAmount = $math.div($math.mul($baseAmount, $vatRate), 100))#*
+      *##set($mtdBillAmount = $math.add($baseAmount, $vatAmount))#*
+      *##set($mtdBillSource = "calculated")#*
+    *##end#*
+        *#"mtd" : {#*
+            *#"reporttype" : "Month",#*
+            *#"currency": "VND",#*
+            *#"dg" : $dgkwh,#*
+            *#"lt" : $ltkwh,#*
+            *#"ht" : $htkwh,#*
+            *#"tranformerloss" : $tranformerloss,#*
+            *#"totalLitres" : $math.roundTo(2, $totalDiesel),#*
+            *#"solar" : $solarkwh,#*
+            *#"billAmount" : $math.roundTo(2, $mtdBillAmount),#*
+            *#"actualBillKwh" : $math.roundTo(2, $mtdActualBillKwh),#*
+            *#"billSource" : $mtdBillSource,#*
+            *#"kwhRate" : $kwhRate,#*
+            *#"peakRate" : $peakRate,#*
+            *#"offPeakRate" : $offPeakRate,#*
+            *#"kvaRate" : $kvaRate,#*
+            *#"kvaDemand" : $kvaDemand,#*
+            *#"serviceCharges" : $serviceCharges,#*
+            *#"vatRate" : $vatRate,#*
+            *#"reaRate" : $reaRate,#*
+            *#"ewuraRate" : $ewuraRate,#*
+            *#"runhour": $dgRunHour,#*
+            *#"dgEfficiency" : $math.roundTo(2, $dgEfficiency)#*
+        *#},#*
+      *##set($count = $count + 1)#*
+
+    ##-----------------Yearly---------------------##
+    *##set($monthMap = {})#*
+    *##set($monthNameMap = [])
+    #set($tmp = $monthNameMap.add(""))
+    #set($tmp = $monthNameMap.add("January"))
+    #set($tmp = $monthNameMap.add("February"))
+    #set($tmp = $monthNameMap.add("March"))
+    #set($tmp = $monthNameMap.add("April"))
+    #set($tmp = $monthNameMap.add("May"))
+    #set($tmp = $monthNameMap.add("June"))
+    #set($tmp = $monthNameMap.add("July"))
+    #set($tmp = $monthNameMap.add("August"))
+    #set($tmp = $monthNameMap.add("September"))
+    #set($tmp = $monthNameMap.add("October"))
+    #set($tmp = $monthNameMap.add("November"))
+    #set($tmp = $monthNameMap.add("December"))#*
+    *##set($mergedMap = {})#*
+    *##set($dgkwh = 0)#*
+    *##set($ltkwh = 0)#*
+    *##set($htkwh = 0)#*
+    *##set($solarkwh = 0)#*
+    *##set($tranformerloss = 0)#*
+    *##set($maxYear = 0)#*
+    *##set($maxMonth = 0)#*
+    *##set($reportMaxYear = 0)#*
+    *##set($reportMaxMonth = 0)#*
+    *##foreach($row in $electricityyear)#*
+      *##set($month = $row.get("_id").month)#*
+      *##set($year = $row.get("_id").year)#*
+      *##set($key = "${year}-${month}")#*
+      *##set($meter = $row.get("_id").metername)#*
+      *##set($kwh = $math.roundTo(2, $row.get("kwh")))#*
+      *##if($year > $maxYear)#*
+        *##set($maxYear = $year)#*
+        *##set($maxMonth = $month)#*
+      *##end#*
+      *##if($year == $maxYear && $month > $maxMonth)#*
+        *##set($maxMonth = $month)#*
+      *##end#*
+
+      *##if($monthMap.containsKey($key) == false)#*
+        *##set($monthObj = {})#*
+        *##set($monthObj.month = $month)#*
+        *##set($monthObj.year = $year)#*
+        *##set($monthObj.monthName = $monthNameMap.get($month))#*
+        *##set($monthObj.lt = 0)#*
+        *##set($monthObj.dg = 0)#*
+        *##set($monthObj.ht = 0)#*
+        *##set($monthObj.solar = 0)#*
+        *##set($monthObj.tranformerloss = 0)#*
+        *##set($monthObj.dieselkwh = 0)#*
+        *##set($monthObj.dieselLitres = 0)#*
+        *##set($monthObj.billAmount = 0)#*
+        *##set($monthObj.actualBillKwh = 0)#*
+        *##set($monthObj.billSource = "none")#*
+        *##set($tmp = $monthMap.put($key, $monthObj))#*
+      *##end#*
+      *##if($meter == $lt1 || $meter == $lt2 || $meter == $lt3 || $meter == $lt4)#*
+        *##set($monthMap.get($key).lt = $math.add($monthMap.get($key).lt, $kwh))#*
+      *##end#*
+      *##if($meter == $dg)#*
+        *##set($monthMap.get($key).dg = $kwh)#*
+      *##end#*
+      *##if($meter == $solar1)#*
+        *##set($monthMap.get($key).solar = $math.add($monthMap.get($key).solar, $kwh))#*
+      *##end#*
+    *##end#*
+    *##foreach($m in $manualreadings)#*
+      *##set($shiftmonth = $convert.toNumber($m.get("_id").month))#*
+      *##set($shiftyear = $convert.toNumber($m.get("_id").year))#*
+      *##set($key = "${shiftyear}-${shiftmonth}")#*
+      *##if($shiftyear > $maxYear)#*
+        *##set($maxYear = $shiftyear)#*
+        *##set($maxMonth = $shiftmonth)#*
+      *##end#*
+      *##if($shiftyear == $maxYear && $shiftmonth > $maxMonth)#*
+        *##set($maxMonth = $shiftmonth)#*
+      *##end#*
+      *##set($htkwh = 0)#*
+      *##set($ltkwh = $math.roundTo(2, $m.get("_id").lt_kwh))#*
+      *##set($dgkwh = $math.roundTo(2, $m.get("_id").dg_kwh))#*
+      *##set($solarkwh = $math.roundTo(2, $m.get("_id").solar_kwh))#*
+      *##set($loss = 0)#*
+
+      *##set($monthObj = {})#*
+      *##set($monthObj.month = $shiftmonth)#*
+      *##set($monthObj.year = $shiftyear)#*
+      *##set($monthObj.lt = $ltkwh)#*
+      *##set($monthObj.dg = $dgkwh)#*
+      *##set($monthObj.ht = $htkwh)#*
+      *##set($monthObj.solar = $solarkwh)#*
+      *##set($monthObj.tranformerloss = $loss)#*
+      *##set($monthObj.dieselkwh = 0)#*
+      *##set($monthObj.dieselLitres = 0)#*
+      *##set($monthObj.billAmount = 0)#*
+      *##set($monthObj.actualBillKwh = 0)#*
+      *##set($monthObj.billSource = "none")#*
+      *##set($tmp = $monthMap.put($key, $monthObj))#*
+
+    *##end#*
+    *##foreach($y in $ytdbilling)#*
+      *##set($recordYear = $convert.toNumber($y.get("_id").recordyear))#*
+      *##set($recordMonth = $convert.toNumber($y.get("_id").recordmonth))#*
+      *##if($recordYear == 0 || $recordMonth == 0)#*
+        *##set($createdAt = $convert.toNumber($y.get("_id").createdAt))#*
+        *##if($createdAt > 100000000000)#*
+          *##set($recordYear = $convert.toNumber($timestamp.format("yyyy", $createdAt)))#*
+          *##set($recordMonth = $convert.toNumber($timestamp.format("MM", $createdAt)))#*
+        *##end#*
+      *##end#*
+      *##if($recordYear > $reportMaxYear)#*
+        *##set($reportMaxYear = $recordYear)#*
+        *##set($reportMaxMonth = $recordMonth)#*
+      *##end#*
+      *##if($recordYear == $reportMaxYear && $recordMonth > $reportMaxMonth)#*
+        *##set($reportMaxMonth = $recordMonth)#*
+      *##end#*
+      *##set($billStartRaw = $y.get("_id").start)#*
+      *##set($billStart = $convert.toNumber($billStartRaw))#*
+      *##set($billStartStr = "$billStartRaw")#*
+      *##set($billYear = 0)#*
+      *##set($billMonth = 0)#*
+      *##if($billStart >= 10000000 && $billStart < 100000000)#*
+        *##set($billYear = $convert.toNumber($billStartStr.substring(0, 4)))#*
+        *##set($billMonth = $convert.toNumber($billStartStr.substring(4, 6)))#*
+      *##end#*
+
+      *##if($billYear > 0 && $billMonth > 0)#*
+      *##if($billYear > $maxYear)#*
+        *##set($maxYear = $billYear)#*
+        *##set($maxMonth = $billMonth)#*
+      *##end#*
+      *##if($billYear == $maxYear && $billMonth > $maxMonth)#*
+        *##set($maxMonth = $billMonth)#*
+      *##end#*
+      *##set($key = "${billYear}-${billMonth}")#*
+      *##set($dieselkwh = $math.roundTo(2, $y.get("dieselkwh")))#*
+      *##set($dieselLitres = $math.roundTo(2, $y.get("diesel")))#*
+      *##set($billElementName = $y.get("_id").elementName)#*
+      *##set($billAmount = 0)#*
+      *##set($actualBillKwh = 0)#*
+      *##if($billElementName == "billing_records")#*
+        *##set($billAmount = $math.roundTo(2, $y.get("actual_bill_amount")))#*
+        *##set($actualBillKwh = $math.roundTo(2, $y.get("actual_kwh_from_bill")))#*
+      *##end#*
+      *##set($monthObj = $monthMap.get($key))#*
+      *##if($monthObj == $null || $monthObj == $emptystr)#*
+        *##set($monthObj = {})#*
+        *##set($monthObj.month = $billMonth)#*
+        *##set($monthObj.monthName = $monthNameMap.get($billMonth))#*
+        *##set($monthObj.year = $billYear)#*
+        *##set($monthObj.dieselkwh = 0)#*
+        *##set($monthObj.dieselLitres = 0)#*
+        *##set($monthObj.billAmount = 0)#*
+        *##set($monthObj.actualBillKwh = 0)#*
+        *##set($monthObj.billSource = "none")#*
+        *##set($monthObj.lt = 0)#*
+        *##set($monthObj.dg = 0)#*
+        *##set($monthObj.ht = 0)#*
+        *##set($monthObj.solar = 0)#*
+        *##set($monthObj.tranformerloss = 0)#*
+      *##end#*
+
+      *##if($monthObj.dieselkwh == $null || $monthObj.dieselkwh == $emptystr)#*
+        *##set($monthObj.dieselkwh = 0)#*
+      *##end#*
+      *##if($monthObj.dieselLitres == $null || $monthObj.dieselLitres == $emptystr)#*
+        *##set($monthObj.dieselLitres = 0)#*
+      *##end#*
+      *##if($monthObj.billAmount == $null || $monthObj.billAmount == $emptystr)#*
+        *##set($monthObj.billAmount = 0)#*
+      *##end#*
+      *##if($monthObj.actualBillKwh == $null || $monthObj.actualBillKwh == $emptystr)#*
+        *##set($monthObj.actualBillKwh = 0)#*
+      *##end#*
+      *##if($monthObj.billSource == $null || $monthObj.billSource == $emptystr)#*
+        *##set($monthObj.billSource = "none")#*
+      *##end#*
+
+      *##set($monthObj.dieselkwh = $math.add($monthObj.dieselkwh, $dieselkwh))#*
+      *##set($monthObj.dieselLitres = $math.add($monthObj.dieselLitres, $dieselLitres))#*
+      *##set($monthObj.billAmount = $math.add($monthObj.billAmount, $billAmount))#*
+      *##if($billAmount > 0)#*
+        *##set($monthObj.billSource = "manual")#*
+      *##end#*
+      *##set($abc =$monthObj.actualBillKwh)#*
+      *##set($monthObj.actualBillKwh = $math.add($abc, $actualBillKwh))#*
+      *##set($tmp = $monthMap.put($key, $monthObj))#*
+      *##end#*
+
+    *##end#*
+    *##if($reportMaxYear > 0)#*
+      *##set($maxYear = $reportMaxYear)#*
+      *##set($maxMonth = $reportMaxMonth)#*
+    *##end#*
+    *##set($monthKeys = [])#*
+    *##if($maxYear > 0)#*
+      *##foreach($i in [0..12])#*
+        *##set($month = $math.sub($maxMonth, $i))#*
+        *##set($year = $maxYear)#*
+        *##if($month < 1)#*
+          *##set($month = $math.add($month, 12))#*
+          *##set($year = $math.sub($year, 1))#*
+        *##end#*
+        *##set($key = "${year}-${month}")#*
+        *##set($tmp = $monthKeys.add($key))#*
+        *##if($monthMap.containsKey($key) == false)#*
+          *##set($monthObj = {})#*
+          *##set($monthObj.month = $month)#*
+          *##set($monthObj.year = $year)#*
+          *##set($monthObj.monthName = $monthNameMap.get($month))#*
+          *##set($monthObj.lt = 0)#*
+          *##set($monthObj.dg = 0)#*
+          *##set($monthObj.ht = 0)#*
+          *##set($monthObj.solar = 0)#*
+          *##set($monthObj.tranformerloss = 0)#*
+          *##set($monthObj.dieselkwh = 0)#*
+          *##set($monthObj.dieselLitres = 0)#*
+          *##set($monthObj.billAmount = 0)#*
+          *##set($monthObj.actualBillKwh = 0)#*
+          *##set($monthObj.billSource = "none")#*
+          *##set($tmp = $monthMap.put($key, $monthObj))#*
+        *##end#*
+      *##end#*
+    *##end#*
+    *##set($monthList = [])#*
+    *##set($currentMonthKey = "${maxYear}-${maxMonth}")#*
+    *##foreach($key in $monthKeys)#*
+      *##set($m = $monthMap.get($key))#*
+      *##set($m.ht = 0)#*
+      *##set($m.tranformerloss = 0)#*
+      *##if($m.dieselLitres == $null || $m.dieselLitres == $emptystr)#*
+        *##set($m.dieselLitres = 0)#*
+        *##set($m.dieselkwh = 0)#*
+      *##end#*
+      *##if($m.billAmount == $null || $m.billAmount == $emptystr)#*
+        *##set($m.billAmount = 0)#*
+      *##end#*
+      *##if($m.billSource == $null || $m.billSource == $emptystr)#*
+        *##set($m.billSource = "none")#*
+      *##end#*
+      *##if($key == $currentMonthKey && $mtdBillAmount > 0)#*
+        *##set($m.billAmount = $mtdBillAmount)#*
+        *##set($m.actualBillKwh = $mtdActualBillKwh)#*
+        *##set($m.billSource = "manual")#*
+      *##end#*
+      *##set($billUnits = $m.lt)#*
+      *##if($m.actualBillKwh > 0)#*
+        *##set($billUnits = $m.actualBillKwh)#*
+      *##end#*
+      *##if($m.billSource == "manual")#*
+      *##elseif($billUnits > 0)#*
+        *##set($baseAmount = $math.mul($billUnits, $kwhRate))#*
+        *##set($vatAmount = $math.div($math.mul($baseAmount, $vatRate), 100))#*
+        *##set($m.billAmount = $math.add($baseAmount, $vatAmount))#*
+        *##set($m.billSource = "calculated")#*
+      *##end#*
+      *##set($tmp = $monthList.add($m))#*
+
+    *##end#*
+    *##set($first = true)#*
+    *#"ytd" : [#*
+        *##foreach($m in $monthList)#*
+          *##if($first == $null || $first == false), #end#*
+          *#{#*
+            *#"month": $m.month, "year": $m.year, "lt": $m.lt, "dg": $m.dg, "ht": $m.ht, "solar": $m.solar, "tranformerloss": $m.tranformerloss, "dieselLitres": $m.dieselLitres, "billAmount": $m.billAmount, "actualBillKwh": $m.actualBillKwh, "billSource": $m.billSource#*
+          *#}#*
+          *##set($first = false)#*
+        *##end#*
+    *#]#*
+  *##set($count = $count + 1)#*
+  *#}#*
+*#}
